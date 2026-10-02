@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>લોયાધામ શિબિર-૧ | નોંધણી ફોર્મ</title>
+    <meta name="description" content="શ્રી સ્વામિનારાયણ મંદિર લોયાધામ આયોજીત લોયાધામ શિબિર-૧ નોંધણી ફોર્મ">
+    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="apple-touch-icon" href="logo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <div class="toast-bar"></div>
+        <div class="toast-body">
+            <div class="toast-icon-wrap">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div>
+                <strong>સફળ!</strong>
+                <span>ફોર્મ સફળતાપૂર્વક સબમિટ થયું.</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== PAGE ===== -->
+    <div class="page">
+
+        <!-- Banner — full visible, no cropping -->
+        <div class="banner-wrap">
+            <img src="banner.jpg" alt="લોયાધામ શિબિર-૧" class="banner-img">
+        </div>
+
+        <!-- Form Container -->
+        <main class="form-container">
+
+            <!-- Title -->
+            <div class="form-hero">
+                <div class="hero-pill">
+                    <span class="pill-dot"></span>
+                    <span>નોંધણી ફોર્મ</span>
+                </div>
+                <h1 class="hero-title">શિબિરાર્થી નોંધણી</h1>
+                <p class="hero-sub">કૃપા કરીને નીચેની બધી માહિતી ધ્યાનથી ભરો. <span class="req-hint"><span class="req">*</span> ફરજિયાત</span></p>
+            </div>
+
+            <form id="shibirForm" autocomplete="off" novalidate>
+
+                <!-- ===== SECTION 1: Personal ===== -->
+                <div class="section">
+                    <div class="section-header">
+                        <span class="legend-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        </span>
+                        <h2>વ્યક્તિગત માહિતી</h2>
+                    </div>
+
+                    <div class="row">
+                        <div class="col col-12">
+                            <label class="lbl" for="name">નામ <span class="req">*</span></label>
+                            <input class="inp" type="text" id="name" name="name" placeholder="આપનું પૂરું નામ લખો" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col col-3">
+                            <label class="lbl" for="age">ઉંમર <span class="req">*</span></label>
+                            <input class="inp" type="number" id="age" name="age" placeholder="ઉંમર" min="1" max="120" required>
+                        </div>
+                        <div class="col col-4-5">
+                            <label class="lbl" for="mobile">મોબાઈલ નં. <span class="req">*</span></label>
+                            <div class="inp-group">
+                                <span class="inp-addon">+91</span>
+                                <input class="inp inp-grouped" type="tel" id="mobile" name="mobile" placeholder="98765 43210" pattern="[0-9]{10}" maxlength="10" required>
+                            </div>
+                        </div>
+                        <div class="col col-4-5">
+                            <label class="lbl" for="whatsapp">વોટ્સએપ નં.</label>
+                            <div class="inp-group">
+                                <span class="inp-addon">+91</span>
+                                <input class="inp inp-grouped" type="tel" id="whatsapp" name="whatsapp" placeholder="98765 43210" pattern="[0-9]{10}" maxlength="10">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col col-12">
+                            <label class="lbl" for="address">સરનામું <span class="req">*</span></label>
+                            <textarea class="inp" id="address" name="address" placeholder="આપનું સંપૂર્ણ સરનામું (ગામ, તાલુકો, જિલ્લો)" rows="2" required></textarea>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col col-6">
+                            <label class="lbl" for="yearsConnected">લોયાધામ પરિવાર સાથે કેટલા વર્ષોથી જોડાયેલા?</label>
+                            <input class="inp" type="text" id="yearsConnected" name="yearsConnected" placeholder="દા.ત. ૫ વર્ષ">
+                        </div>
+                        <div class="col col-6">
+                            <label class="lbl">કયા સંતોના સંપર્કમાં છો?</label>
+                            <div class="saint-select" id="saintSelect">
+                                <div class="saint-trigger" id="saintTrigger" onclick="toggleSaintDropdown()">
+                                    <span class="saint-placeholder" id="saintPlaceholder">સંત પસંદ કરો...</span>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                                </div>
+                                <div class="saint-dropdown" id="saintDropdown">
+                                    <input type="text" class="saint-search" id="saintSearch" placeholder="🔍 શોધો..." oninput="filterSaints()">
+                                    <div class="saint-list" id="saintList"></div>
+                                </div>
+                            </div>
+                            <input type="hidden" name="saintContact" id="saintContact">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== INFO NOTE ===== -->
+                <div class="note note-info">
+                    <svg class="note-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                    <p>આપના ઘરમાંથી <strong>માતા/પિતા, યુવાન દિકરા/દિકરી</strong> અથવા <strong>બાળસભાના નાના દિકરા/દિકરીઓ</strong>ની વિગત ભરવા વિનંતી. પરિવારના સભ્યોના મોબાઈલ નંબર અલગ હોય તો તે આપવા.</p>
+                </div>
+
+                <!-- ===== SECTION 2: Family ===== -->
+                <div class="section">
+                    <div class="section-header">
+                        <span class="legend-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+                        </span>
+                        <h2>પરિવારના સભ્યોની વિગત</h2>
+                    </div>
+
+                    <div class="members" id="membersWrap">
+                        <!-- Main Person -->
+                        <div class="member-card" data-idx="0" id="mc0">
+                            <div class="mc-head">
+                                <div class="mc-num">૧</div>
+                                <div class="mc-badge mc-badge-primary">મુખ્ય વ્યક્તિ</div>
+                            </div>
+                            <div class="mc-body">
+                                <div class="mc-row">
+                                    <div class="mc-field mc-f-half">
+                                        <label>નામ</label>
+                                        <input type="text" name="m_name_0" placeholder="નામ">
+                                    </div>
+                                    <div class="mc-field mc-f-quarter">
+                                        <label>સંબંધ</label>
+                                        <input type="text" name="m_rel_0" value="સ્વયં" readonly>
+                                    </div>
+                                    <div class="mc-field mc-f-quarter">
+                                        <label>ઉંમર</label>
+                                        <input type="number" name="m_age_0" placeholder="ઉંમર" min="1" max="120">
+                                    </div>
+                                </div>
+                                <div class="mc-row">
+                                    <div class="mc-field mc-f-half">
+                                        <label>મો. નંબર</label>
+                                        <input type="tel" name="m_mob_0" placeholder="મોબાઈલ નંબર" maxlength="10">
+                                    </div>
+                                    <div class="mc-field mc-f-half">
+                                        <label>રોકાણ તારીખ</label>
+                                        <div class="mc-dates">
+                                            <input type="date" name="m_from_0" min="2026-11-08" max="2026-11-14">
+                                            <span>થી</span>
+                                            <input type="date" name="m_to_0" min="2026-11-08" max="2026-11-14">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mc-row">
+                                    <div class="mc-field mc-f-third">
+                                        <label>આવડત</label>
+                                        <input type="text" name="m_skill_0" placeholder="આવડત">
+                                    </div>
+                                    <div class="mc-field mc-f-third">
+                                        <label>શારીરિક તકલીફ</label>
+                                        <input type="text" name="m_health_0" placeholder="જો હોય તો">
+                                    </div>
+                                    <div class="mc-field mc-f-third">
+                                        <label>સેવામાં રુચિ</label>
+                                        <input type="text" name="m_seva_0" placeholder="સેવા">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="button" class="add-btn" id="addBtn" onclick="addMember()">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        પરિવારનો સભ્ય ઉમેરો
+                    </button>
+                </div>
+
+                <!-- ===== SECTION 3: Questions ===== -->
+                <div class="section">
+                    <div class="section-header">
+                        <span class="legend-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+                        </span>
+                        <h2>જાણવાની ઈચ્છા</h2>
+                    </div>
+
+                    <p class="section-info">શિબિરના માધ્યમે આધ્યાત્મિક જીવન અને ઘર વ્યવહારિક / પારિવારિક વિષયોમાં શું જાણવા ઈચ્છો છો?</p>
+
+                    <div class="q-wrap">
+                        <div class="q-num">૧</div>
+                        <textarea class="inp" name="question1" id="question1" rows="2" placeholder="આપનો પ્રથમ મુદ્દો / પ્રશ્ન..."></textarea>
+                    </div>
+                    <div class="q-wrap">
+                        <div class="q-num">૨</div>
+                        <textarea class="inp" name="question2" id="question2" rows="2" placeholder="આપનો બીજો મુદ્દો / પ્રશ્ન..."></textarea>
+                    </div>
+                </div>
+
+                <!-- ===== WARNING ===== -->
+                <div class="note note-warn">
+                    <svg class="note-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    <p><strong>નોંધ:</strong> આપની સાથે સગા સંબંધી / મિત્ર આવવાના હોય તો તેમનું ફોર્મ <strong>અલગથી ભરવું અનિવાર્ય</strong> છે.</p>
+                </div>
+
+                <!-- ===== ACTIONS ===== -->
+                <div class="actions">
+                    <button type="submit" class="btn btn-submit" id="submitBtn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                        <span>ફોર્મ સબમિટ કરો</span>
+                    </button>
+                    <button type="button" class="btn btn-pdf" id="pdfBtn" onclick="generatePDF()">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                        <span>PDF ડાઉનલોડ</span>
+                    </button>
+                    <button type="button" class="btn btn-print" id="printBtn" onclick="window.print()">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                        <span>પ્રિન્ટ કરો</span>
+                    </button>
+                </div>
+
+            </form>
+
+            <!-- Footer -->
+            <footer class="foot">
+                <div class="foot-line"></div>
+                <p>॥ જય શ્રી સ્વામિનારાયણ ॥</p>
+                <p class="foot-sub">શ્રી સ્વામિનારાયણ મંદિર, લોયાધામ · તા. સાયલા, જી. સુરેન્દ્રનગર</p>
+            </footer>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
