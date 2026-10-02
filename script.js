@@ -492,25 +492,23 @@ function generatePDF() {
 
     const d = collect();
 
-    // CRITICAL: html2canvas requires the element to be FULLY VISIBLE (opacity:1,
-    // no negative z-index) to compute non-zero height. We use position:fixed
-    // covering the entire viewport with a white background. The brief flash
-    // looks like a loading overlay. It's removed immediately after capture.
+    // CRITICAL: html2canvas needs the element to be:
+    // 1) FULLY VISIBLE (opacity:1, positive z-index)
+    // 2) NOT height-constrained (no max-height, no overflow:hidden/auto)
+    // 3) position:absolute so it expands to full natural height
     const el = document.createElement('div');
     el.id = 'pdfRenderContainer';
     el.innerHTML = pdfHTML(d);
     el.style.cssText = [
-        'position: fixed',
+        'position: absolute',
         'left: 0',
         'top: 0',
         'width: 780px',
-        'height: auto',
-        'max-height: 100vh',
-        'overflow-y: auto',
         'background: #ffffff',
         'z-index: 99999',
         'padding: 16px 24px',
         'box-sizing: border-box',
+        'overflow: visible',
         'font-family: sans-serif',
         'font-size: 13px',
         'line-height: 1.5',
@@ -518,10 +516,12 @@ function generatePDF() {
     ].join(';');
     document.body.appendChild(el);
 
-    // Allow layout + fonts to settle (300ms)
+    // Scroll to top so html2canvas captures from top of page
+    window.scrollTo(0, 0);
+
+    // Allow layout + fonts to settle (400ms)
     setTimeout(function() {
-        // Force the container to exactly 780px for capture
-        el.style.width = '780px';
+        var fullHeight = el.scrollHeight || el.offsetHeight;
 
         html2pdf().set({
             margin:      [8, 8, 8, 8],
@@ -533,7 +533,10 @@ function generatePDF() {
                 backgroundColor: '#ffffff',
                 scrollY: 0,
                 scrollX: 0,
-                width: 780
+                width: 780,
+                height: fullHeight,
+                windowWidth: 780,
+                windowHeight: fullHeight
             },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         }).from(el).toPdf().get('pdf').then(async function(pdfObj) {
