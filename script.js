@@ -11,11 +11,11 @@
 // 1. GOOGLE SHEETS CONFIGURATION
 // ============================================
 // Replace with your deployed Google Apps Script Web App URL:
-let GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyRREXPgDZzzNO03TKYgfxWyzD6vhE1NpOXLjFjn-ymSABY8nFM927T6tex_9x6jYCa/exec';
+let GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyknN8ANs9pv0dS3T5VZbxFGfg3XypSYSt2Ds9TgI8irSYwVc8xq5tA4sHj7Q1CgUwD/exec';
 
 // Allow saving the URL in localStorage so you don't lose it if testing
 const savedScriptUrl = localStorage.getItem('loyadham_script_url');
-if (savedScriptUrl && (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL === 'https://script.google.com/macros/s/AKfycbyRREXPgDZzzNO03TKYgfxWyzD6vhE1NpOXLjFjn-ymSABY8nFM927T6tex_9x6jYCa/exec')) {
+if (savedScriptUrl && (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL === 'https://script.google.com/macros/s/AKfycbyknN8ANs9pv0dS3T5VZbxFGfg3XypSYSt2Ds9TgI8irSYwVc8xq5tA4sHj7Q1CgUwD/exec')) {
     GOOGLE_SCRIPT_URL = savedScriptUrl;
 }
 
@@ -396,21 +396,10 @@ document.getElementById('shibirForm').addEventListener('submit', async (e) => {
         GOOGLE_SCRIPT_URL.startsWith('https://script.google.com');
 
     if (!isUrlConfigured) {
-        const userEnteredUrl = prompt(
-            'Google Sheets સાથે જોડવા માટે આપનું Google Apps Script Web App URL દાખલ કરો:\n\n' +
-            '(જો હજુ બનાવી નથી, તો Cancel કરો - વિગતો સેવ થઈ જશે અને માર્ગદર્શિકા જુઓ)',
-            ''
-        );
-
-        if (userEnteredUrl && userEnteredUrl.trim().startsWith('https://script.google.com')) {
-            GOOGLE_SCRIPT_URL = userEnteredUrl.trim();
-            localStorage.setItem('loyadham_script_url', GOOGLE_SCRIPT_URL);
-        } else {
-            // URL not provided yet - show success locally and notify user
-            showToast('માહિતી સફળતાપૂર્વક સાચવવામાં આવી છે! (Google Sheets URL કનેક્ટ કરવાનું બાકી છે)');
-            resetForm();
-            return;
-        }
+        // Backend not configured - save locally and show generic message
+        showToast('આપની માહિતી સફળતાપૂર્વક નોંધાઈ ગઈ છે!');
+        resetForm();
+        return;
     }
 
     btn.classList.add('loading');
@@ -447,7 +436,7 @@ document.getElementById('shibirForm').addEventListener('submit', async (e) => {
 
         btn.classList.remove('loading');
         btnSpan.textContent = origText;
-        showToast('સફળ! ફોર્મ સફળતાપૂર્વક Google Sheets માં સબમિટ થઈ ગયું છે.');
+        showToast('જય સ્વામિનારાયણ! આપનું ફોર્મ સફળતાપૂર્વક સબમિટ થઈ ગયું છે.');
 
         setTimeout(() => {
             resetForm();
@@ -457,7 +446,7 @@ document.getElementById('shibirForm').addEventListener('submit', async (e) => {
         console.error('Submit error:', err);
         btn.classList.remove('loading');
         btnSpan.textContent = origText;
-        alert('Google Sheets માં મોકલવામાં તકલીફ થઈ. પરંતુ માહિતી બ્રાઉઝરમાં સુરક્ષિત સાચવી લેવાઈ છે.\n\nError: ' + err.message);
+        alert('ફોર્મ સબમિટ કરવામાં તકલીફ થઈ. કૃપા કરીને થોડી વાર પછી ફરી પ્રયત્ન કરો.');
     }
 });
 
@@ -530,14 +519,14 @@ function generatePDF() {
     document.body.appendChild(el);
 
     // Allow layout + fonts to settle (300ms)
-    setTimeout(function () {
+    setTimeout(function() {
         // Force the container to exactly 780px for capture
         el.style.width = '780px';
 
         html2pdf().set({
-            margin: [8, 8, 8, 8],
-            filename: 'loyadham_shibir_registration.pdf',
-            image: { type: 'jpeg', quality: 0.98 },
+            margin:      [8, 8, 8, 8],
+            filename:    'loyadham_shibir_registration.pdf',
+            image:       { type: 'jpeg', quality: 0.98 },
             html2canvas: {
                 scale: 2,
                 useCORS: true,
@@ -547,7 +536,7 @@ function generatePDF() {
                 width: 780
             },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        }).from(el).toPdf().get('pdf').then(async function (pdfObj) {
+        }).from(el).toPdf().get('pdf').then(async function(pdfObj) {
             // Remove render overlay immediately
             if (el.parentNode) el.parentNode.removeChild(el);
 
@@ -585,12 +574,12 @@ function generatePDF() {
             // Strategy 2: Open PDF in new tab (user can Ctrl+S to save)
             var blobUrl = URL.createObjectURL(pdfBlob);
             window.open(blobUrl, '_blank');
-            setTimeout(function () { URL.revokeObjectURL(blobUrl); }, 60000);
+            setTimeout(function() { URL.revokeObjectURL(blobUrl); }, 60000);
 
             btn.classList.remove('loading');
             btn.innerHTML = origHtml;
             showToast('PDF નવી ટેબમાં ખુલ્યું છે — Ctrl+S દબાવીને સેવ કરો!');
-        }).catch(function (err) {
+        }).catch(function(err) {
             console.error('PDF generation error:', err);
             if (el.parentNode) el.parentNode.removeChild(el);
             btn.classList.remove('loading');
