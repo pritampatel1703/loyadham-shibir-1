@@ -11,10 +11,10 @@
 // 1. GOOGLE SHEETS CONFIGURATION
 // ============================================
 // Replace with your deployed Google Apps Script Web App URL:
-let GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwKFKxnrLUomObAw0gwk-H-pNTN3QCgi0TMAAI7FGZRZrOYd32hlrlmWrGObPQGN5wF/exec';
+let GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwqA7VYGEKAXTMnmLVP3j59vVwJIFegzm8acOWIUYAIF-S6paZs5vcJ0poLh9XLTdE/exec';
 
 // Clear old cached test URL if present
-if (localStorage.getItem('loyadham_script_url') === 'https://script.google.com/macros/s/AKfycbxnjT8EXvGq1hXgYXaOE3wdwxkXPj4gjSinkKAsZE0LR-gsElZpehTNLxLNmjOF7px5/exec') {
+if (localStorage.getItem('loyadham_script_url') === 'https://script.google.com/macros/s/AKfycbwqA7VYGEKAXTMnmLVP3j59vVwJIFegzm8acOWIUYAIF-S6paZs5vcJ0poLh9XLTdE/exec') {
     localStorage.removeItem('loyadham_script_url');
 }
 const savedScriptUrl = localStorage.getItem('loyadham_script_url');
@@ -320,6 +320,7 @@ function collect() {
     const fd = new FormData(document.getElementById('shibirForm'));
     const d = {
         name: (fd.get('name') || '').trim(),
+        gaam: (fd.get('gaam') || '').trim(),
         age: (fd.get('age') || '').trim(),
         mobile: (fd.get('mobile') || '').trim(),
         whatsapp: (fd.get('whatsapp') || '').trim(),
@@ -368,6 +369,11 @@ document.getElementById('shibirForm').addEventListener('submit', async (e) => {
         document.getElementById('name').focus();
         return;
     }
+    if (!d.gaam) {
+        alert('કૃપા કરીને ગામ દાખલ કરો.');
+        document.getElementById('gaam').focus();
+        return;
+    }
     if (!d.age) {
         alert('કૃપા કરીને ઉંમર દાખલ કરો.');
         document.getElementById('age').focus();
@@ -412,6 +418,7 @@ document.getElementById('shibirForm').addEventListener('submit', async (e) => {
         // Build payload with individual member fields in separate columns
         const payload = {
             name: d.name,
+            gaam: d.gaam,
             age: d.age,
             mobile: d.mobile,
             whatsapp: d.whatsapp || '-',
@@ -491,149 +498,7 @@ function showToast(msg) {
     setTimeout(() => t.classList.remove('show'), 5000);
 }
 
-// ============================================
-// 7. PDF GENERATION
-// ============================================
-async function generatePDF() {
-    const d = collect();
-    if (!d.name) {
-        alert('કૃપા કરીને પહેલા આપનું પૂરું નામ અને વિગતો ભરો.');
-        const nameInput = document.getElementById('fullName');
-        if (nameInput) nameInput.focus();
-        return;
-    }
 
-    const btn = document.getElementById('pdfBtn');
-    const origHtml = btn.innerHTML;
-    btn.classList.add('loading');
-    btn.innerHTML = `
-        <svg style="animation: spin 1s linear infinite;" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>
-        <span>PDF બની રહ્યું છે...</span>
-    `;
-
-    try {
-        if (document.fonts && document.fonts.ready) {
-            await document.fonts.ready;
-        }
-
-        const container = document.createElement('div');
-        container.innerHTML = pdfHTML(d);
-
-        const cleanName = (d.name || 'registration').replace(/[/\\?%*:|"<>]/g, '_').trim();
-        const filename = `loyadham_shibir_${cleanName}.pdf`;
-
-        const opt = {
-            margin: [8, 8, 8, 8],
-            filename: filename,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: {
-                scale: 2,
-                useCORS: true,
-                letterRendering: true,
-                backgroundColor: '#ffffff'
-            },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        };
-
-        await html2pdf().set(opt).from(container).save();
-
-        showToast('PDF સફળતાપૂર્વક ડાઉનલોડ થઈ ગયું છે!');
-    } catch (err) {
-        console.error('PDF error:', err);
-        alert('PDF ડાઉનલોડ કરવામાં તકલીફ થઈ. "પ્રિન્ટ કરો" બટન વાપરીને Save as PDF કરો.');
-    } finally {
-        btn.classList.remove('loading');
-        btn.innerHTML = origHtml;
-    }
-}
-
-function pdfHTML(d) {
-    const rows = d.members.map((m, i) => `<tr>
-        <td style="text-align:center;padding:5px;border:1px solid #ddd;font-size:11px;">${i + 1}</td>
-        <td style="padding:5px 6px;border:1px solid #ddd;font-size:11px;">${m.name}</td>
-        <td style="padding:5px 6px;border:1px solid #ddd;font-size:11px;">${m.relation || '-'}</td>
-        <td style="text-align:center;padding:5px;border:1px solid #ddd;font-size:11px;">${m.age || '-'}</td>
-        <td style="padding:5px 6px;border:1px solid #ddd;font-size:11px;">${m.mobile || '-'}</td>
-        <td style="padding:5px 6px;border:1px solid #ddd;font-size:11px;">${m.from || '-'} ${(m.from || m.to) ? 'થી' : ''} ${m.to || '-'}</td>
-        <td style="padding:5px 6px;border:1px solid #ddd;font-size:11px;">${m.skill || '-'}</td>
-        <td style="padding:5px 6px;border:1px solid #ddd;font-size:11px;">${m.health || '-'}</td>
-        <td style="padding:5px 6px;border:1px solid #ddd;font-size:11px;">${m.seva || '-'}</td>
-    </tr>`).join('');
-
-    return `
-    <div style="font-family:'Noto Sans Gujarati',sans-serif;color:#2c2c3a;padding:12px;width:100%;box-sizing:border-box;">
-        <div style="text-align:center;border:2px solid #d06810;border-radius:10px;padding:18px;margin-bottom:16px;background:#fff8f0;">
-            <h1 style="color:#ac4f0e;font-size:18px;margin-bottom:4px;">"જય શ્રી સ્વામિનારાયણ"</h1>
-            <p style="font-size:12px;color:#6b6b80;margin-bottom:3px;">શ્રી સ્વામિનારાયણ મંદિર લોયાધામ આયોજીત</p>
-            <div style="display:inline-block;padding:4px 18px;background:linear-gradient(135deg,#e8801a,#d06810);border-radius:20px;color:#fff;font-size:14px;font-weight:bold;margin:6px 0;">"લોયાધામ શિબિર – ૧"</div>
-            <p style="font-size:11px;color:#6b6b80;margin:4px 0;">૦૮/૧૧/૨૦૨૬ (રવિવાર) થી ૧૪/૧૧/૨૦૨૬ (શનિવાર)</p>
-            <p style="font-size:11px;color:#6b6b80;">પ્રેરક: પ.પૂ.સ.ગુ.શા.શ્રી ઘનશ્યામપ્રકાશદાસજી સ્વામી</p>
-        </div>
-
-        <div style="border:1px solid #e2ddd5;border-radius:8px;padding:14px;margin-bottom:14px;">
-            <h3 style="color:#ac4f0e;font-size:13px;border-bottom:1px solid #e2ddd5;padding-bottom:6px;margin-bottom:10px;">વ્યક્તિગત માહિતી</h3>
-            <table style="width:100%;font-size:11px;border-collapse:collapse;">
-                <tr>
-                    <td style="padding:4px 6px;width:22%;color:#6b6b80;"><strong>નામ:</strong></td>
-                    <td style="padding:4px 6px;border-bottom:1px solid #e2ddd5;" colspan="3"><strong>${d.name}</strong></td>
-                </tr>
-                <tr>
-                    <td style="padding:4px 6px;color:#6b6b80;"><strong>ઉંમર:</strong></td>
-                    <td style="padding:4px 6px;border-bottom:1px solid #e2ddd5;">${d.age}</td>
-                    <td style="padding:4px 6px;width:20%;color:#6b6b80;"><strong>મોબાઈલ:</strong></td>
-                    <td style="padding:4px 6px;border-bottom:1px solid #e2ddd5;">${d.mobile}</td>
-                </tr>
-                <tr>
-                    <td style="padding:4px 6px;color:#6b6b80;"><strong>વોટ્સએપ:</strong></td>
-                    <td style="padding:4px 6px;border-bottom:1px solid #e2ddd5;">${d.whatsapp || '-'}</td>
-                    <td style="padding:4px 6px;color:#6b6b80;"><strong>વર્ષો જોડાયેલા:</strong></td>
-                    <td style="padding:4px 6px;border-bottom:1px solid #e2ddd5;">${d.yearsConnected || '-'}</td>
-                </tr>
-                <tr>
-                    <td style="padding:4px 6px;color:#6b6b80;"><strong>સરનામું:</strong></td>
-                    <td colspan="3" style="padding:4px 6px;border-bottom:1px solid #e2ddd5;">${d.address}</td>
-                </tr>
-                <tr>
-                    <td style="padding:4px 6px;color:#6b6b80;"><strong>સંતો સંપર્ક:</strong></td>
-                    <td colspan="3" style="padding:4px 6px;">${d.saintContact || '-'}</td>
-                </tr>
-            </table>
-        </div>
-
-        ${d.members.length ? `
-        <div style="border:1px solid #e2ddd5;border-radius:8px;padding:14px;margin-bottom:14px;">
-            <h3 style="color:#ac4f0e;font-size:13px;border-bottom:1px solid #e2ddd5;padding-bottom:6px;margin-bottom:10px;">પરિવારના સભ્યો</h3>
-            <table style="width:100%;border-collapse:collapse;">
-                <thead>
-                    <tr style="background:#fff8f0;">
-                        <th style="padding:5px;border:1px solid #ddd;font-size:10px;color:#ac4f0e;">ક્રમ</th>
-                        <th style="padding:5px;border:1px solid #ddd;font-size:10px;color:#ac4f0e;">નામ</th>
-                        <th style="padding:5px;border:1px solid #ddd;font-size:10px;color:#ac4f0e;">સંબંધ</th>
-                        <th style="padding:5px;border:1px solid #ddd;font-size:10px;color:#ac4f0e;">ઉંમર</th>
-                        <th style="padding:5px;border:1px solid #ddd;font-size:10px;color:#ac4f0e;">મો.નં.</th>
-                        <th style="padding:5px;border:1px solid #ddd;font-size:10px;color:#ac4f0e;">રોકાણ તારીખ</th>
-                        <th style="padding:5px;border:1px solid #ddd;font-size:10px;color:#ac4f0e;">આવડત</th>
-                        <th style="padding:5px;border:1px solid #ddd;font-size:10px;color:#ac4f0e;">તકલીફ</th>
-                        <th style="padding:5px;border:1px solid #ddd;font-size:10px;color:#ac4f0e;">સેવા</th>
-                    </tr>
-                </thead>
-                <tbody>${rows}</tbody>
-            </table>
-        </div>` : ''}
-
-        ${(d.question1 || d.question2) ? `
-        <div style="border:1px solid #e2ddd5;border-radius:8px;padding:14px;margin-bottom:14px;">
-            <h3 style="color:#ac4f0e;font-size:13px;border-bottom:1px solid #e2ddd5;padding-bottom:6px;margin-bottom:10px;">જાણવાની ઈચ્છા</h3>
-            ${d.question1 ? `<p style="font-size:11px;margin-bottom:6px;"><strong>૧)</strong> ${d.question1}</p>` : ''}
-            ${d.question2 ? `<p style="font-size:11px;"><strong>૨)</strong> ${d.question2}</p>` : ''}
-        </div>` : ''}
-
-        <div style="text-align:center;font-size:10px;color:#9e9eab;margin-top:16px;padding-top:10px;border-top:1px solid #e2ddd5;">
-            <p style="color:#d06810;font-weight:700;">॥ જય શ્રી સ્વામિનારાયણ ॥</p>
-            <p style="margin-top:2px;">શ્રી સ્વામિનારાયણ મંદિર, લોયાધામ</p>
-        </div>
-    </div>`;
-}
 
 // ============================================
 // 8. ON DOM LOADED

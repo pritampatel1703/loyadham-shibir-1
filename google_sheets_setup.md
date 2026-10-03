@@ -26,7 +26,7 @@ var MEMBER_LABELS = {
   'name': 'નામ', 'relation': 'સંબંધ', 'age': 'ઉંમર', 'mobile': 'મોબાઈલ',
   'from': 'રોકાણ_થી', 'to': 'રોકાણ_સુધી', 'skill': 'આવડત', 'health': 'તકલીફ', 'seva': 'સેવા'
 };
-var BASE_HEADERS = ['નામ', 'ઉંમર', 'મોબાઈલ', 'વોટ્સએપ', 'સરનામું', 'વર્ષો જોડાયેલા', 'સંતો સંપર્ક', 'પ્રશ્ન ૧', 'પ્રશ્ન ૨', 'સભ્યોની સંખ્યા', 'સબમિટ તારીખ'];
+var BASE_HEADERS = ['નામ', 'ગામ', 'ઉંમર', 'મોબાઈલ', 'વોટ્સએપ', 'સરનામું', 'વર્ષો જોડાયેલા', 'સંતો સંપર્ક', 'પ્રશ્ન ૧', 'પ્રશ્ન ૨', 'સભ્યોની સંખ્યા', 'સબમિટ તારીખ'];
 
 // How many member column-sets currently exist in the sheet?
 function getCurrentMemberCount(sheet) {
@@ -98,6 +98,7 @@ function doPost(e) {
     // Build the row: base fields
     var row = [
       data.name || '',
+      data.gaam || '',
       data.age || '',
       data.mobile || '',
       data.whatsapp || '',
