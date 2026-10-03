@@ -11,11 +11,14 @@
 // 1. GOOGLE SHEETS CONFIGURATION
 // ============================================
 // Replace with your deployed Google Apps Script Web App URL:
-let GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxnjT8EXvGq1hXgYXaOE3wdwxkXPj4gjSinkKAsZE0LR-gsElZpehTNLxLNmjOF7px5/exec';
+let GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwKFKxnrLUomObAw0gwk-H-pNTN3QCgi0TMAAI7FGZRZrOYd32hlrlmWrGObPQGN5wF/exec';
 
-// Allow saving the URL in localStorage so you don't lose it if testing
+// Clear old cached test URL if present
+if (localStorage.getItem('loyadham_script_url') === 'https://script.google.com/macros/s/AKfycbxnjT8EXvGq1hXgYXaOE3wdwxkXPj4gjSinkKAsZE0LR-gsElZpehTNLxLNmjOF7px5/exec') {
+    localStorage.removeItem('loyadham_script_url');
+}
 const savedScriptUrl = localStorage.getItem('loyadham_script_url');
-if (savedScriptUrl && (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL === 'https://script.google.com/macros/s/AKfycbxnjT8EXvGq1hXgYXaOE3wdwxkXPj4gjSinkKAsZE0LR-gsElZpehTNLxLNmjOF7px5/exec')) {
+if (savedScriptUrl && savedScriptUrl.startsWith('https://script.google.com/')) {
     GOOGLE_SCRIPT_URL = savedScriptUrl;
 }
 
@@ -491,7 +494,15 @@ function showToast(msg) {
 // ============================================
 // 7. PDF GENERATION
 // ============================================
-function generatePDF() {
+async function generatePDF() {
+    const d = collect();
+    if (!d.name) {
+        alert('કૃપા કરીને પહેલા આપનું પૂરું નામ અને વિગતો ભરો.');
+        const nameInput = document.getElementById('fullName');
+        if (nameInput) nameInput.focus();
+        return;
+    }
+
     const btn = document.getElementById('pdfBtn');
     const origHtml = btn.innerHTML;
     btn.classList.add('loading');
@@ -500,89 +511,40 @@ function generatePDF() {
         <span>PDF બની રહ્યું છે...</span>
     `;
 
-    const d = collect();
+    try {
+        if (document.fonts && document.fonts.ready) {
+            await document.fonts.ready;
+        }
 
-    // Create an isolated container for PDF rendering
-    const el = document.createElement('div');
-    el.id = 'pdfRenderContainer';
-    el.innerHTML = pdfHTML(d);
+        const container = document.createElement('div');
+        container.innerHTML = pdfHTML(d);
 
-    // Style: position absolute, full width 780px, fully visible, white background
-    // NO height constraints, NO overflow clipping
-    el.style.cssText = 'position:fixed; left:0; top:0; width:780px; background:#fff; z-index:99999; padding:0; margin:0; box-sizing:border-box; overflow:visible;';
-    document.body.appendChild(el);
+        const cleanName = (d.name || 'registration').replace(/[/\\?%*:|"<>]/g, '_').trim();
+        const filename = `loyadham_shibir_${cleanName}.pdf`;
 
-    // Scroll page to top
-    window.scrollTo(0, 0);
-
-    // Wait for layout to settle
-    setTimeout(function () {
-        // Measure the actual rendered height
-        var contentHeight = el.scrollHeight;
-        console.log('PDF container height:', contentHeight, 'px');
-
-        // Use html2pdf's simple .save() which handles the entire pipeline
-        html2pdf().set({
-            margin: [6, 6, 6, 6],
-            filename: 'loyadham_shibir_registration.pdf',
-            image: { type: 'jpeg', quality: 0.95 },
+        const opt = {
+            margin: [8, 8, 8, 8],
+            filename: filename,
+            image: { type: 'jpeg', quality: 0.98 },
             html2canvas: {
                 scale: 2,
                 useCORS: true,
-                backgroundColor: '#ffffff',
-                scrollX: 0,
-                scrollY: -window.scrollY,
-                width: 780,
-                height: contentHeight
+                letterRendering: true,
+                backgroundColor: '#ffffff'
             },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        }).from(el).toPdf().get('pdf').then(async function (pdfObj) {
-            // Cleanup
-            if (el.parentNode) el.parentNode.removeChild(el);
+        };
 
-            // Get PDF as blob
-            var arrBuf = pdfObj.output('arraybuffer');
-            var pdfBlob = new Blob([arrBuf], { type: 'application/pdf' });
+        await html2pdf().set(opt).from(container).save();
 
-            // Use native Save As dialog if available
-            if (window.showSaveFilePicker) {
-                try {
-                    var handle = await window.showSaveFilePicker({
-                        suggestedName: 'loyadham_shibir_registration.pdf',
-                        types: [{ description: 'PDF', accept: { 'application/pdf': ['.pdf'] } }]
-                    });
-                    var writable = await handle.createWritable();
-                    await writable.write(pdfBlob);
-                    await writable.close();
-                    btn.classList.remove('loading');
-                    btn.innerHTML = origHtml;
-                    showToast('PDF સફળતાપૂર્વક સેવ થઈ ગયું છે!');
-                    return;
-                } catch (e) {
-                    if (e.name === 'AbortError') {
-                        btn.classList.remove('loading');
-                        btn.innerHTML = origHtml;
-                        return;
-                    }
-                }
-            }
-
-            // Fallback: open in new tab
-            var blobUrl = URL.createObjectURL(pdfBlob);
-            window.open(blobUrl, '_blank');
-            setTimeout(function () { URL.revokeObjectURL(blobUrl); }, 60000);
-
-            btn.classList.remove('loading');
-            btn.innerHTML = origHtml;
-            showToast('PDF નવી ટેબમાં ખુલ્યું છે — Ctrl+S દબાવીને સેવ કરો!');
-        }).catch(function (err) {
-            console.error('PDF generation error:', err);
-            if (el.parentNode) el.parentNode.removeChild(el);
-            btn.classList.remove('loading');
-            btn.innerHTML = origHtml;
-            alert('PDF ડાઉનલોડ ન થયું. "પ્રિન્ટ કરો" બટન વાપરીને Save as PDF કરો.');
-        });
-    }, 500);
+        showToast('PDF સફળતાપૂર્વક ડાઉનલોડ થઈ ગયું છે!');
+    } catch (err) {
+        console.error('PDF error:', err);
+        alert('PDF ડાઉનલોડ કરવામાં તકલીફ થઈ. "પ્રિન્ટ કરો" બટન વાપરીને Save as PDF કરો.');
+    } finally {
+        btn.classList.remove('loading');
+        btn.innerHTML = origHtml;
+    }
 }
 
 function pdfHTML(d) {
@@ -599,7 +561,7 @@ function pdfHTML(d) {
     </tr>`).join('');
 
     return `
-    <div style="font-family:'Noto Sans Gujarati',sans-serif;color:#2c2c3a;padding:16px;max-width:780px;">
+    <div style="font-family:'Noto Sans Gujarati',sans-serif;color:#2c2c3a;padding:12px;width:100%;box-sizing:border-box;">
         <div style="text-align:center;border:2px solid #d06810;border-radius:10px;padding:18px;margin-bottom:16px;background:#fff8f0;">
             <h1 style="color:#ac4f0e;font-size:18px;margin-bottom:4px;">"જય શ્રી સ્વામિનારાયણ"</h1>
             <p style="font-size:12px;color:#6b6b80;margin-bottom:3px;">શ્રી સ્વામિનારાયણ મંદિર લોયાધામ આયોજીત</p>
