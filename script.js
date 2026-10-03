@@ -11,11 +11,11 @@
 // 1. GOOGLE SHEETS CONFIGURATION
 // ============================================
 // Replace with your deployed Google Apps Script Web App URL:
-let GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyknN8ANs9pv0dS3T5VZbxFGfg3XypSYSt2Ds9TgI8irSYwVc8xq5tA4sHj7Q1CgUwD/exec';
+let GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxnjT8EXvGq1hXgYXaOE3wdwxkXPj4gjSinkKAsZE0LR-gsElZpehTNLxLNmjOF7px5/exec';
 
 // Allow saving the URL in localStorage so you don't lose it if testing
 const savedScriptUrl = localStorage.getItem('loyadham_script_url');
-if (savedScriptUrl && (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL === 'https://script.google.com/macros/s/AKfycbyknN8ANs9pv0dS3T5VZbxFGfg3XypSYSt2Ds9TgI8irSYwVc8xq5tA4sHj7Q1CgUwD/exec')) {
+if (savedScriptUrl && (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL === 'https://script.google.com/macros/s/AKfycbxnjT8EXvGq1hXgYXaOE3wdwxkXPj4gjSinkKAsZE0LR-gsElZpehTNLxLNmjOF7px5/exec')) {
     GOOGLE_SCRIPT_URL = savedScriptUrl;
 }
 
@@ -406,11 +406,7 @@ document.getElementById('shibirForm').addEventListener('submit', async (e) => {
     btnSpan.textContent = 'સબમિટ થઈ રહ્યું છે...';
 
     try {
-        // Flatten members into readable text for Google Sheet row
-        const membersStr = d.members.map((m, i) =>
-            `${i + 1}. ${m.name} (${m.relation || '-'}) [ઉંમર:${m.age || '-'} મો:${m.mobile || '-'} રોકાણ:${m.from || '-'} થી ${m.to || '-'} આવડત:${m.skill || '-'} તકલીફ:${m.health || '-'} સેવા:${m.seva || '-'}]`
-        ).join(' | ');
-
+        // Build payload with individual member fields in separate columns
         const payload = {
             name: d.name,
             age: d.age,
@@ -422,9 +418,23 @@ document.getElementById('shibirForm').addEventListener('submit', async (e) => {
             question1: d.question1 || '-',
             question2: d.question2 || '-',
             membersCount: d.members.length,
-            members: membersStr || '-',
             submittedAt: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
         };
+
+        // Add each family member's details as separate fields
+        // member1_name, member1_relation, member1_age, etc.
+        d.members.forEach(function (m, i) {
+            var n = i + 1;
+            payload['member' + n + '_name'] = m.name || '';
+            payload['member' + n + '_relation'] = m.relation || '';
+            payload['member' + n + '_age'] = m.age || '';
+            payload['member' + n + '_mobile'] = m.mobile || '';
+            payload['member' + n + '_from'] = m.from || '';
+            payload['member' + n + '_to'] = m.to || '';
+            payload['member' + n + '_skill'] = m.skill || '';
+            payload['member' + n + '_health'] = m.health || '';
+            payload['member' + n + '_seva'] = m.seva || '';
+        });
 
         // POST request to Google Apps Script
         await fetch(GOOGLE_SCRIPT_URL, {
@@ -492,70 +502,54 @@ function generatePDF() {
 
     const d = collect();
 
-    // CRITICAL: html2canvas needs the element to be:
-    // 1) FULLY VISIBLE (opacity:1, positive z-index)
-    // 2) NOT height-constrained (no max-height, no overflow:hidden/auto)
-    // 3) position:absolute so it expands to full natural height
+    // Create an isolated container for PDF rendering
     const el = document.createElement('div');
     el.id = 'pdfRenderContainer';
     el.innerHTML = pdfHTML(d);
-    el.style.cssText = [
-        'position: absolute',
-        'left: 0',
-        'top: 0',
-        'width: 780px',
-        'background: #ffffff',
-        'z-index: 99999',
-        'padding: 16px 24px',
-        'box-sizing: border-box',
-        'overflow: visible',
-        'font-family: sans-serif',
-        'font-size: 13px',
-        'line-height: 1.5',
-        'color: #222'
-    ].join(';');
+
+    // Style: position absolute, full width 780px, fully visible, white background
+    // NO height constraints, NO overflow clipping
+    el.style.cssText = 'position:fixed; left:0; top:0; width:780px; background:#fff; z-index:99999; padding:0; margin:0; box-sizing:border-box; overflow:visible;';
     document.body.appendChild(el);
 
-    // Scroll to top so html2canvas captures from top of page
+    // Scroll page to top
     window.scrollTo(0, 0);
 
-    // Allow layout + fonts to settle (400ms)
-    setTimeout(function() {
-        var fullHeight = el.scrollHeight || el.offsetHeight;
+    // Wait for layout to settle
+    setTimeout(function () {
+        // Measure the actual rendered height
+        var contentHeight = el.scrollHeight;
+        console.log('PDF container height:', contentHeight, 'px');
 
+        // Use html2pdf's simple .save() which handles the entire pipeline
         html2pdf().set({
-            margin:      [8, 8, 8, 8],
-            filename:    'loyadham_shibir_registration.pdf',
-            image:       { type: 'jpeg', quality: 0.98 },
+            margin: [6, 6, 6, 6],
+            filename: 'loyadham_shibir_registration.pdf',
+            image: { type: 'jpeg', quality: 0.95 },
             html2canvas: {
                 scale: 2,
                 useCORS: true,
                 backgroundColor: '#ffffff',
-                scrollY: 0,
                 scrollX: 0,
+                scrollY: -window.scrollY,
                 width: 780,
-                height: fullHeight,
-                windowWidth: 780,
-                windowHeight: fullHeight
+                height: contentHeight
             },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        }).from(el).toPdf().get('pdf').then(async function(pdfObj) {
-            // Remove render overlay immediately
+        }).from(el).toPdf().get('pdf').then(async function (pdfObj) {
+            // Cleanup
             if (el.parentNode) el.parentNode.removeChild(el);
 
-            // Get PDF as raw arraybuffer
+            // Get PDF as blob
             var arrBuf = pdfObj.output('arraybuffer');
             var pdfBlob = new Blob([arrBuf], { type: 'application/pdf' });
 
-            // Strategy 1: Native "Save As" dialog (works perfectly on localhost)
+            // Use native Save As dialog if available
             if (window.showSaveFilePicker) {
                 try {
                     var handle = await window.showSaveFilePicker({
                         suggestedName: 'loyadham_shibir_registration.pdf',
-                        types: [{
-                            description: 'PDF Document',
-                            accept: { 'application/pdf': ['.pdf'] }
-                        }]
+                        types: [{ description: 'PDF', accept: { 'application/pdf': ['.pdf'] } }]
                     });
                     var writable = await handle.createWritable();
                     await writable.write(pdfBlob);
@@ -565,7 +559,6 @@ function generatePDF() {
                     showToast('PDF સફળતાપૂર્વક સેવ થઈ ગયું છે!');
                     return;
                 } catch (e) {
-                    // User cancelled the save dialog, or API failed
                     if (e.name === 'AbortError') {
                         btn.classList.remove('loading');
                         btn.innerHTML = origHtml;
@@ -574,23 +567,22 @@ function generatePDF() {
                 }
             }
 
-            // Strategy 2: Open PDF in new tab (user can Ctrl+S to save)
+            // Fallback: open in new tab
             var blobUrl = URL.createObjectURL(pdfBlob);
             window.open(blobUrl, '_blank');
-            setTimeout(function() { URL.revokeObjectURL(blobUrl); }, 60000);
+            setTimeout(function () { URL.revokeObjectURL(blobUrl); }, 60000);
 
             btn.classList.remove('loading');
             btn.innerHTML = origHtml;
             showToast('PDF નવી ટેબમાં ખુલ્યું છે — Ctrl+S દબાવીને સેવ કરો!');
-        }).catch(function(err) {
+        }).catch(function (err) {
             console.error('PDF generation error:', err);
             if (el.parentNode) el.parentNode.removeChild(el);
             btn.classList.remove('loading');
             btn.innerHTML = origHtml;
-            // Fallback: browser's native print dialog (user can "Save as PDF")
             alert('PDF ડાઉનલોડ ન થયું. "પ્રિન્ટ કરો" બટન વાપરીને Save as PDF કરો.');
         });
-    }, 300);
+    }, 500);
 }
 
 function pdfHTML(d) {

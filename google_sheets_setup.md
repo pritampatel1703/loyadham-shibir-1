@@ -9,7 +9,7 @@ Follow these steps to save all public form submissions directly to your Google S
 1. Go to [sheets.google.com](https://sheets.google.com)
 2. Create a **new blank spreadsheet**
 3. Name it: **"લોયાધામ શિબિર-૧ નોંધણી"**
-4. **No need to add headers** — they will be added automatically on first submission! ✅
+4. **No need to add headers** — they will be added automatically! ✅
 
 ---
 
@@ -20,25 +20,68 @@ Follow these steps to save all public form submissions directly to your Google S
 3. **Paste** this code:
 
 ```javascript
-// Column headers — auto-created on first submission
-var HEADERS = [
-  'નામ', 'ઉંમર', 'મોબાઈલ', 'વોટ્સએપ', 'સરનામું',
-  'વર્ષો જોડાયેલા', 'સંતો સંપર્ક', 'પ્રશ્ન ૧', 'પ્રશ્ન ૨',
-  'સભ્યોની સંખ્યા', 'સભ્યોની વિગત', 'સબમિટ તારીખ'
-];
+// 9 fields per family member
+var MEMBER_FIELDS = ['name', 'relation', 'age', 'mobile', 'from', 'to', 'skill', 'health', 'seva'];
+var MEMBER_LABELS = {
+  'name': 'નામ', 'relation': 'સંબંધ', 'age': 'ઉંમર', 'mobile': 'મોબાઈલ',
+  'from': 'રોકાણ_થી', 'to': 'રોકાણ_સુધી', 'skill': 'આવડત', 'health': 'તકલીફ', 'seva': 'સેવા'
+};
+var BASE_HEADERS = ['નામ', 'ઉંમર', 'મોબાઈલ', 'વોટ્સએપ', 'સરનામું', 'વર્ષો જોડાયેલા', 'સંતો સંપર્ક', 'પ્રશ્ન ૧', 'પ્રશ્ન ૨', 'સભ્યોની સંખ્યા', 'સબમિટ તારીખ'];
 
-function ensureHeaders(sheet) {
+// How many member column-sets currently exist in the sheet?
+function getCurrentMemberCount(sheet) {
+  var lastCol = sheet.getLastColumn();
+  var extraCols = lastCol - BASE_HEADERS.length;
+  if (extraCols <= 0) return 0;
+  return Math.floor(extraCols / MEMBER_FIELDS.length);
+}
+
+// Build headers for one member (e.g., સભ્ય3_નામ, સભ્ય3_સંબંધ, ...)
+function memberHeaders(memberNum) {
+  var h = [];
+  for (var j = 0; j < MEMBER_FIELDS.length; j++) {
+    h.push('સભ્ય' + memberNum + '_' + MEMBER_LABELS[MEMBER_FIELDS[j]]);
+  }
+  return h;
+}
+
+// Ensure the sheet has at least `needed` member column-sets
+function ensureColumns(sheet, needed) {
   var firstCell = sheet.getRange('A1').getValue();
+
+  // First time: create base headers
   if (!firstCell || firstCell === '') {
-    var headerRange = sheet.getRange(1, 1, 1, HEADERS.length);
-    headerRange.setValues([HEADERS]);
+    var headers = BASE_HEADERS.slice();
+    // Add columns for however many members this first submission has
+    for (var i = 1; i <= needed; i++) {
+      headers = headers.concat(memberHeaders(i));
+    }
+    var headerRange = sheet.getRange(1, 1, 1, headers.length);
+    headerRange.setValues([headers]);
     headerRange.setFontWeight('bold');
     headerRange.setBackground('#fff3e0');
     headerRange.setFontColor('#bf360c');
     headerRange.setHorizontalAlignment('center');
     sheet.setFrozenRows(1);
-    for (var i = 1; i <= HEADERS.length; i++) {
-      sheet.autoResizeColumn(i);
+    for (var k = 1; k <= BASE_HEADERS.length; k++) {
+      sheet.autoResizeColumn(k);
+    }
+    return;
+  }
+
+  // Sheet already has headers — check if we need more member columns
+  var current = getCurrentMemberCount(sheet);
+  if (needed > current) {
+    // Add new member column headers (only the new ones)
+    for (var i = current + 1; i <= needed; i++) {
+      var newHeaders = memberHeaders(i);
+      var startCol = BASE_HEADERS.length + ((i - 1) * MEMBER_FIELDS.length) + 1;
+      var range = sheet.getRange(1, startCol, 1, newHeaders.length);
+      range.setValues([newHeaders]);
+      range.setFontWeight('bold');
+      range.setBackground('#fff3e0');
+      range.setFontColor('#bf360c');
+      range.setHorizontalAlignment('center');
     }
   }
 }
@@ -47,11 +90,13 @@ function doPost(e) {
   try {
     var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
     var data = JSON.parse(e.postData.contents);
+    var memberCount = parseInt(data.membersCount) || 0;
 
-    // Auto-create headers if sheet is empty
-    ensureHeaders(sheet);
+    // Dynamically expand columns if this submission has more members than before
+    ensureColumns(sheet, memberCount);
 
-    sheet.appendRow([
+    // Build the row: base fields
+    var row = [
       data.name || '',
       data.age || '',
       data.mobile || '',
@@ -61,15 +106,24 @@ function doPost(e) {
       data.saintContact || '',
       data.question1 || '',
       data.question2 || '',
-      data.membersCount || 0,
-      data.members || '',
+      memberCount,
       data.submittedAt || new Date().toLocaleString('en-IN', {timeZone: 'Asia/Kolkata'})
-    ]);
+    ];
+
+    // Add member fields — fill up to the current max columns in the sheet
+    var maxMembers = Math.max(memberCount, getCurrentMemberCount(sheet));
+    for (var i = 1; i <= maxMembers; i++) {
+      for (var j = 0; j < MEMBER_FIELDS.length; j++) {
+        var key = 'member' + i + '_' + MEMBER_FIELDS[j];
+        row.push(data[key] || '');
+      }
+    }
+
+    sheet.appendRow(row);
 
     return ContentService
       .createTextOutput(JSON.stringify({ status: 'success' }))
       .setMimeType(ContentService.MimeType.JSON);
-
   } catch (error) {
     return ContentService
       .createTextOutput(JSON.stringify({ status: 'error', message: error.toString() }))
@@ -83,43 +137,26 @@ function doGet(e) {
     .setMimeType(ContentService.MimeType.TEXT);
 }
 
-// Run this manually to set up headers without waiting for first submission
+// Optional: run manually to set up base headers only
 function setupHeaders() {
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-  ensureHeaders(sheet);
+  ensureColumns(sheet, 0);
 }
 ```
 
 4. Click **💾 Save** (or Ctrl+S)
-5. Name the project: **"Loyadham Shibir Form"**
-
-> **Optional:** Run `setupHeaders` manually (Run → setupHeaders) to add headers immediately.
-
----
-
-## Step 3: Deploy as Web App
-
-1. Click **Deploy → New deployment**
-2. Click the ⚙️ gear icon → Select **Web app**
-3. Set these options:
-   - **Description**: "Loyadham Shibir Form Backend"
-   - **Execute as**: **Me** (your email)
-   - **Who has access**: **Anyone**
-4. Click **Deploy**
-5. Click **Authorize access** → Choose your Google account → Click **Allow**
-6. **Copy the Web App URL**
+5. **Deploy → New deployment** → Web app → Anyone → Deploy
+6. Copy the new URL and update line 14 in `script.js`
 
 ---
 
-## Step 4: Connect to Your Form
+## How Dynamic Columns Work
 
-Your form is already connected. If you need to change the URL, edit line 14 in `script.js`.
+| Submission | Members | What Happens |
+|---|---|---|
+| User 1 (1 member) | 1 | Creates base headers + 9 columns for સભ્ય1 |
+| User 2 (0 members) | 0 | No new columns added, member columns stay empty |
+| User 3 (4 members) | 4 | Adds 27 new columns (સભ્ય2, સભ્ય3, સભ્ય4) |
+| User 4 (2 members) | 2 | No new columns needed, fills સભ્ય1 & સભ્ય2 only |
 
----
-
-## Step 5: Test It!
-
-1. Open the form in your browser
-2. Fill in some test data
-3. Click **"ફોર્મ સબમિટ કરો"**
-4. Check your Google Sheet — headers + data should appear automatically! 🎉
+The sheet **grows only when needed** — no wasted columns! 🎉
